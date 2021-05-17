@@ -1,11 +1,16 @@
-version: "3"
+version: '3.8'
 services:
-  dev:
-    build:
-      context: "./"
-      dockerfile: "./Dockerfile"
+  dynamodb-local:
+    command: "-jar DynamoDBLocal.jar -sharedDb -optimizeDbBeforeStartup -dbPath ./data"
+    image: "amazon/dynamodb-local:latest"
+    container_name: dynamodb-local
     ports:
-      - "8080:8080"
+      - "8000:8000"
     volumes:
-      - "./:/app"
-    tty: true
+      - "./docker/dynamodb:/home/dynamodblocal/data"
+    working_dir: /home/dynamodblocal
+    networks:
+      - dynamodb-local-network
+networks:
+  dynamodb-local-network:
+    driver: bridge
