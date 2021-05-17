@@ -1,0 +1,27 @@
+{
+    "TableName": "local_company_table",
+    "KeySchema": [
+      {
+        "AttributeName": "company",
+        "KeyType": "HASH"
+      },
+      {
+        "AttributeName": "year",
+        "KeyType": "RANGE"
+      }
+    ],
+    "AttributeDefinitions": [
+      {
+        "AttributeName": "company",
+        "AttributeType": "S"
+      },
+      {
+        "AttributeName": "year",
+        "AttributeType": "S"
+      }
+    ],
+    "ProvisionedThroughput": {
+      "ReadCapacityUnits": 2,
+      "WriteCapacityUnits": 2
+    }
+}
