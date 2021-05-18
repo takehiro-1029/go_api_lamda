@@ -25,6 +25,38 @@ Resources:
       Environment:
         Variables:
           PARAM1: VALUE
+  SignUpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: SignUpFunction
+      Handler: signup
+      Runtime: go1.x
+      Tracing: Active
+      Events:
+        CatchAll:
+          Type: Api
+          Properties:
+            Path: /signup
+            Method: GET
+      Environment:
+        Variables:
+          PARAM1: VALUE
+  LoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: LoginFunction
+      Handler: login
+      Runtime: go1.x
+      Tracing: Active
+      Events:
+        CatchAll:
+          Type: Api
+          Properties:
+            Path: /login
+            Method: GET
+      Environment:
+        Variables:
+          PARAM1: VALUE
 Outputs:
   HelloWorldAPI:
     Description: API Gateway endpoint URL for Prod environment for First Function
