@@ -14,51 +14,43 @@ import (
 //TODO:user情報はpostのBodyから受け取る
 const (
 	userName        = "registedUserName"
-	userEmail       = "registedUserEmail"
-	userPass        = "registedUserPass"
+	userAuthCode    = "registedUserAuthCode"
 	cognitoClientID = "cognitoClientID"
 )
 
-type signUpUserDetail struct {
-	Name     string                                `json:"name"`
-	Email    string                                `json:"email"`
-	Responce *cognitoidentityprovider.SignUpOutput `json:"responce"`
+type authUserDetail struct {
+	Name     string                                       `json:"name"`
+	Responce *cognitoidentityprovider.ConfirmSignUpOutput `json:"responce"`
 }
 
-func signUp(name string, pass string, mail string, clientID string) (signUpUserDetail, error) {
+func auth(name string, authCode string, clientId string) (authUserDetail, error) {
 	svc := cognitoidentityprovider.New(session.New(), &aws.Config{
 		Region: aws.String("ap-northeast-1"),
 	})
-	ua := &cognitoidentityprovider.AttributeType{
-		Name:  aws.String("email"),
-		Value: aws.String(mail),
-	}
-	params := &cognitoidentityprovider.SignUpInput{
-		Username: aws.String(name),
-		Password: aws.String(pass),
-		ClientId: aws.String(clientID),
-		UserAttributes: []*cognitoidentityprovider.AttributeType{
-			ua,
-		},
+
+	params := &cognitoidentityprovider.ConfirmSignUpInput{
+		Username:         aws.String(name),
+		ConfirmationCode: aws.String(authCode),
+		ClientId:         aws.String(clientId),
 	}
 
-	res, err := svc.SignUp(params)
+	res, err := svc.ConfirmSignUp(params)
 	if err != nil {
-		return signUpUserDetail{}, err
+		return authUserDetail{}, err
 	}
 
-	signUpUser := signUpUserDetail{
+	authUser := authUserDetail{
 		Name:     name,
-		Email:    mail,
 		Responce: res,
 	}
 
-	return signUpUser, nil
+	return authUser, nil
+
 }
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 
-	res, err := signUp(userName, userPass, userEmail, cognitoClientID)
+	res, err := auth(userName, userAuthCode, cognitoClientID)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			Body:       string(err.Error()),
