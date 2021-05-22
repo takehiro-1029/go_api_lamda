@@ -11,31 +11,39 @@ import (
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 )
 
-//TODO:user情報はpostのBodyから受け取る
-const (
-	userToken = "registedUserName"
-)
+type request struct {
+	UserToken string `json:"user_token"`
+}
 
 type userDetail struct {
 	Name     string                                 `json:"name"`
 	Responce *cognitoidentityprovider.GetUserOutput `json:"responce"`
 }
 
-func getUser(token string) (userDetail, error) {
+func convertRequestJSON(inputs string) (*request, error) {
+	var req request
+	err := json.Unmarshal([]byte(inputs), &req)
+	if err != nil {
+		return nil, err
+	}
+	return &req, nil
+}
+
+func getUserFormToken(req *request) (*userDetail, error) {
 	svc := cognitoidentityprovider.New(session.New(), &aws.Config{
 		Region: aws.String("ap-northeast-1"),
 	})
 
 	params := &cognitoidentityprovider.GetUserInput{
-		AccessToken: aws.String(token),
+		AccessToken: aws.String(req.UserToken),
 	}
 
 	res, err := svc.GetUser(params)
 	if err != nil {
-		return userDetail{}, err
+		return nil, err
 	}
 
-	user := userDetail{
+	user := &userDetail{
 		Name:     aws.StringValue(res.Username),
 		Responce: res,
 	}
@@ -45,7 +53,15 @@ func getUser(token string) (userDetail, error) {
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 
-	res, err := getUser(userToken)
+	req, err := convertRequestJSON(request.Body)
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			Body:       err.Error(),
+			StatusCode: 500,
+		}, err
+	}
+
+	res, err := getUserFormToken(req)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			Body:       string(err.Error()),
