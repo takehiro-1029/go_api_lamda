@@ -11,19 +11,27 @@ import (
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 )
 
-//TODO:user情報はpostのBodyから受け取る
-const (
-	userName        = "registedUserName"
-	userPass        = "registedUserPass"
-	cognitoClientID = "cognitoClientID"
-)
+type request struct {
+	UserName        string `json:"user_name"`
+	UserPass        string `json:"user_pass"`
+	CognitoClientID string `json:"client_id"`
+}
 
 type LoginUserDetail struct {
 	Name        string `json:"name"`
 	AccessToken string `json:"access_token"`
 }
 
-func login(name string, pass string, clientID string) (LoginUserDetail, error) {
+func convertRequestJSON(inputs string) (*request, error) {
+	var req request
+	err := json.Unmarshal([]byte(inputs), &req)
+	if err != nil {
+		return nil, err
+	}
+	return &req, nil
+}
+
+func login(req *request) (*LoginUserDetail, error) {
 	svc := cognitoidentityprovider.New(session.New(), &aws.Config{
 		Region: aws.String("ap-northeast-1"),
 	})
@@ -31,19 +39,19 @@ func login(name string, pass string, clientID string) (LoginUserDetail, error) {
 	params := &cognitoidentityprovider.InitiateAuthInput{
 		AuthFlow: aws.String("USER_PASSWORD_AUTH"),
 		AuthParameters: map[string]*string{
-			"USERNAME": aws.String(name),
-			"PASSWORD": aws.String(pass),
+			"USERNAME": aws.String(req.UserName),
+			"PASSWORD": aws.String(req.UserPass),
 		},
-		ClientId: aws.String(clientID),
+		ClientId: aws.String(req.CognitoClientID),
 	}
 
 	res, err := svc.InitiateAuth(params)
 	if err != nil {
-		return LoginUserDetail{}, err
+		return nil, err
 	}
 
-	loginUser := LoginUserDetail{
-		Name:        name,
+	loginUser := &LoginUserDetail{
+		Name:        req.UserName,
 		AccessToken: aws.StringValue(res.AuthenticationResult.AccessToken),
 	}
 
@@ -52,7 +60,15 @@ func login(name string, pass string, clientID string) (LoginUserDetail, error) {
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 
-	res, err := login(userName, userPass, cognitoClientID)
+	req, err := convertRequestJSON(request.Body)
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			Body:       err.Error(),
+			StatusCode: 500,
+		}, err
+	}
+
+	res, err := login(req)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			Body:       string(err.Error()),

@@ -11,13 +11,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 )
 
-//TODO:user情報はpostのBodyから受け取る
-const (
-	userName        = "registedUserName"
-	userEmail       = "registedUserEmail"
-	userPass        = "registedUserPass"
-	cognitoClientID = "cognitoClientID"
-)
+type request struct {
+	UserName        string `json:"user_name"`
+	UserEmail       string `json:"user_email"`
+	UserPass        string `json:"user_pass"`
+	CognitoClientID string `json:"client_id"`
+}
 
 type signUpUserDetail struct {
 	Name     string                                `json:"name"`
@@ -25,18 +24,27 @@ type signUpUserDetail struct {
 	Responce *cognitoidentityprovider.SignUpOutput `json:"responce"`
 }
 
-func signUp(name string, pass string, mail string, clientID string) (signUpUserDetail, error) {
+func convertRequestJSON(inputs string) (*request, error) {
+	var req request
+	err := json.Unmarshal([]byte(inputs), &req)
+	if err != nil {
+		return nil, err
+	}
+	return &req, nil
+}
+
+func signUp(req *request) (*signUpUserDetail, error) {
 	svc := cognitoidentityprovider.New(session.New(), &aws.Config{
 		Region: aws.String("ap-northeast-1"),
 	})
 	ua := &cognitoidentityprovider.AttributeType{
 		Name:  aws.String("email"),
-		Value: aws.String(mail),
+		Value: aws.String(req.UserEmail),
 	}
 	params := &cognitoidentityprovider.SignUpInput{
-		Username: aws.String(name),
-		Password: aws.String(pass),
-		ClientId: aws.String(clientID),
+		Username: aws.String(req.UserName),
+		Password: aws.String(req.UserPass),
+		ClientId: aws.String(req.CognitoClientID),
 		UserAttributes: []*cognitoidentityprovider.AttributeType{
 			ua,
 		},
@@ -44,12 +52,12 @@ func signUp(name string, pass string, mail string, clientID string) (signUpUserD
 
 	res, err := svc.SignUp(params)
 	if err != nil {
-		return signUpUserDetail{}, err
+		return nil, err
 	}
 
-	signUpUser := signUpUserDetail{
-		Name:     name,
-		Email:    mail,
+	signUpUser := &signUpUserDetail{
+		Name:     req.UserName,
+		Email:    req.UserEmail,
 		Responce: res,
 	}
 
@@ -58,7 +66,15 @@ func signUp(name string, pass string, mail string, clientID string) (signUpUserD
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 
-	res, err := signUp(userName, userPass, userEmail, cognitoClientID)
+	req, err := convertRequestJSON(request.Body)
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			Body:       err.Error(),
+			StatusCode: 500,
+		}, err
+	}
+
+	res, err := signUp(req)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			Body:       string(err.Error()),
