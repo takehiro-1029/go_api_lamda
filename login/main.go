@@ -20,6 +20,7 @@ type request struct {
 type LoginUserDetail struct {
 	Name        string `json:"name"`
 	AccessToken string `json:"access_token"`
+	IDToken     string `json:"id_token"`
 }
 
 func convertRequestJSON(inputs string) (*request, error) {
@@ -53,6 +54,7 @@ func login(req *request) (*LoginUserDetail, error) {
 	loginUser := &LoginUserDetail{
 		Name:        req.UserName,
 		AccessToken: aws.StringValue(res.AuthenticationResult.AccessToken),
+		IDToken:     aws.StringValue(res.AuthenticationResult.IdToken),
 	}
 
 	return loginUser, nil
