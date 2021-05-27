@@ -1,0 +1,63 @@
+openapi: 3.0.1
+info:
+  description: 'REST API 定義'
+  version: '1.0.0'
+  title: "REST API"
+paths:
+  /hello:
+    get:
+      summary: 'lambdaとDynamoDBの連携'
+      responses:
+        200:
+          description: CREATED
+      x-amazon-apigateway-integration:
+        uri: # APIからキックするLambda関数のARN
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HelloWorldFunction.Arn}/invocations
+        passthroughBehavior: when_no_templates
+        httpMethod: POST # Lambda関数を呼び出す場合はPOST
+        type: aws_proxy # Lambda関数を呼び出す場合はaws_proxy
+  /login:
+    post:
+      summary: 'ユーザーのログイン認証'
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+      responses:
+        200:
+          description: CREATED
+      security:
+        - CognitoAuth: []
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LoginFunction.Arn}/invocations
+        passthroughBehavior: when_no_templates
+        httpMethod: POST
+        type: aws_proxy
+components:
+  schemas:
+    Login:
+      type: object
+      required:
+        - user_name
+        - user_pass
+        - client_id
+      properties:
+        user_name:
+          type: string
+        user_pass:
+          type: string
+        client_id:
+          type: string
+  securitySchemes:
+    CognitoAuth:
+      type: apiKey # 認証に使うトークンを格納するヘッダーのキー
+      name: Authorization # ここを変えたらヘッダー以外でも可能？
+      in: header
+      x-amazon-apigateway-authtype: cognito_user_pools
+      x-amazon-apigateway-authorizer:
+        type: cognito_user_pools
+        providerARNs:
+          - arn:aws:cognito-idp:{region}:{account_id}:userpool/{user_pool_id}
