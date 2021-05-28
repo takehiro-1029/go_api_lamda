@@ -18,7 +18,8 @@ type authUserDetail struct {
 }
 
 func auth(req *common.Request) (*authUserDetail, error) {
-	svc := cognitoidentityprovider.New(session.New(), &aws.Config{
+	mySession := session.Must(session.NewSession())
+	svc := cognitoidentityprovider.New(mySession, &aws.Config{
 		Region: aws.String("ap-northeast-1"),
 	})
 

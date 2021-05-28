@@ -18,7 +18,8 @@ type userDetail struct {
 }
 
 func getUserFormToken(req *common.Request) (*userDetail, error) {
-	svc := cognitoidentityprovider.New(session.New(), &aws.Config{
+	mySession := session.Must(session.NewSession())
+	svc := cognitoidentityprovider.New(mySession, &aws.Config{
 		Region: aws.String("ap-northeast-1"),
 	})
 
