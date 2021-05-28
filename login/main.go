@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"hello-world/common"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -11,28 +12,13 @@ import (
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 )
 
-type request struct {
-	UserName        string `json:"user_name"`
-	UserPass        string `json:"user_pass"`
-	CognitoClientID string `json:"client_id"`
-}
-
 type LoginUserDetail struct {
 	Name        string `json:"name"`
 	AccessToken string `json:"access_token"`
 	IDToken     string `json:"id_token"`
 }
 
-func convertRequestJSON(inputs string) (*request, error) {
-	var req request
-	err := json.Unmarshal([]byte(inputs), &req)
-	if err != nil {
-		return nil, err
-	}
-	return &req, nil
-}
-
-func login(req *request) (*LoginUserDetail, error) {
+func login(req *common.Request) (*LoginUserDetail, error) {
 	svc := cognitoidentityprovider.New(session.New(), &aws.Config{
 		Region: aws.String("ap-northeast-1"),
 	})
@@ -62,7 +48,8 @@ func login(req *request) (*LoginUserDetail, error) {
 
 func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 
-	req, err := convertRequestJSON(request.Body)
+	var req common.Request
+	err := common.ConvertRequestToJSON(&req, request.Body)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			Body:       err.Error(),
@@ -70,7 +57,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		}, err
 	}
 
-	res, err := login(req)
+	res, err := login(&req)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			Body:       string(err.Error()),
