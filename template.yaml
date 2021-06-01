@@ -47,3 +47,17 @@ Resources:
             RestApiId: !Ref MyApi
             Path: /login
             Method: POST
+  UserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: user/
+      Handler: user
+      Runtime: go1.x
+      Tracing: Active
+      Events:
+        CatchAll:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyApi
+            Path: /user
+            Method: POST
