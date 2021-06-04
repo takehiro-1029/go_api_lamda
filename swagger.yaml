@@ -36,6 +36,26 @@ paths:
         passthroughBehavior: when_no_templates
         httpMethod: POST
         type: aws_proxy
+  /user:
+    post:
+      summary: 'ユーザー情報の取得'
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        200:
+          description: CREATED
+      security:
+        - CognitoAuth: []
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UserFunction.Arn}/invocations
+        passthroughBehavior: when_no_templates
+        httpMethod: POST
+        type: aws_proxy
 components:
   schemas:
     Login:
@@ -50,6 +70,13 @@ components:
         user_pass:
           type: string
         client_id:
+          type: string
+    User:
+      type: object
+      required:
+        - user_token
+      properties:
+        user_token:
           type: string
   securitySchemes:
     CognitoAuth:
