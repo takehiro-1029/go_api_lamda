@@ -44,7 +44,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Login'
+              $ref: '#/components/schemas/User'
       responses:
         200:
           description: CREATED
@@ -70,6 +70,13 @@ components:
         user_pass:
           type: string
         client_id:
+          type: string
+    User:
+      type: object
+      required:
+        - user_token
+      properties:
+        user_token:
           type: string
   securitySchemes:
     CognitoAuth:
