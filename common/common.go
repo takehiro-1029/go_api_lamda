@@ -14,9 +14,11 @@ type Request struct {
 }
 
 func ConvertRequestToJSON(req *Request, inputs string) error {
+
 	err := json.Unmarshal([]byte(inputs), &req)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
